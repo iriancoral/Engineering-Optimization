@@ -19,6 +19,19 @@
 > "PP homopolymer high flow (CES EduPack) selected for its widespread use in commercial pot
 > manufacturing, low density, low cost, and sufficient strength for applied soil pressure loads."
 
+**Thin-shell approximation:**
+> "A thin-shell approximation (t << r1, h) is used throughout the model. Small geometric corrections
+> of order t are neglected (base area, soil height, inner vs outer radius, cylinder vs cone hoop stress).
+> This is justified since the focus of this project is on the optimization methodology, not on detailed
+> structural analysis."
+
+**Hoop stress formula — cylinder vs cone:**
+> "The hoop stress formula sigma = p*r/t (cylinder) is also correct for horizontal soil pressure on a
+> conical wall. The conical shell formula sigma = p_normal * r / (t * cos(theta)) requires the pressure
+> perpendicular to the wall. The horizontal soil pressure decomposes as p_normal = p_horizontal * cos(theta).
+> Substituting: sigma = p_horizontal * cos(theta) * r / (t * cos(theta)) = p_horizontal * r / t.
+> The cos(theta) cancels — no correction needed."
+
 **Wall angle model (alpha -> theta_wall):**
 > "Fixed wall angle theta_wall = 10 deg gives r2 = r1 + h*tan(theta_wall), physically more meaningful
 > than a fixed ratio r2/r1. Consistent with injection moulding practice. theta_wall < phi_soil = 30 deg
@@ -29,6 +42,10 @@
 **Project:** Optimal Flower Pot Design
 **Student IDs:** 4894413 & 5170540
 **Last updated:** 2026-03-24
+**GitHub:** https://github.com/iriancoral/Engineering-Optimization (branch: master)
+- Push: git add . -> git commit -m "msg" -> git push
+- Pull: git pull
+- Partner clones with: git clone https://github.com/iriancoral/Engineering-Optimization.git
 
 ---
 
@@ -94,9 +111,11 @@ potcontour  ->  potsensitivity  ->  potpenalty  ->  potfmincon  ->  potkkt
 | cost_mat | 2 euro/kg | PP material cost |
 | rho_soil | 1200 kg/m3 | Typical potting soil |
 | K0 | 0.5 | Jaky formula, phi = 30 deg |
-| alpha (taper ratio) | 1.3 (r2 = 1.3 * r1) | Fixed in 2-var, free in 3-4 var |
-| Stability constraint | h <= 3 * r1 | Pot must not tip over |
-| Drainage constraint | pi * r1^2 >= 3e-4 m2 | Minimum drainage hole area |
+| theta_wall | 10 deg | Fixed wall angle, r2 = r1 + h*tan(10deg), replaces fixed alpha |
+| Stability constraint | h <= 3 * r1 | Geometric bound, prevents unrealistic tall/narrow pots |
+| Drainage holes | 5 holes, f_drain = 0.15 | 15% of base area removed from Vmat, scales with r1 |
+| n_holes | 5 | Fixed number of drainage holes |
+| f_drain | 0.15 | Holes occupy 15% of base area, d_hole = 2*r1*sqrt(0.15/5) |
 
 ---
 
