@@ -20,7 +20,7 @@ params.g_acc       = g_acc;
 params.sigma_allow = sigma_allow;
 params.cost_mat    = cost_mat;
 params.m_soil      = m_soil;
-params.A_drain_min = A_drain_min;
+params.f_drain     = f_drain;
 params.stab_ratio  = stab_ratio;
 
 V_required = m_soil / rho_soil;
@@ -32,6 +32,11 @@ con_fun = @(x) potcon(x, params);
 % Variable bounds
 lb = [r1_min; h_min];
 ub = [r1_max; h_max];
+
+%SQP = “Use Lagrange multipliers + Taylor approximations to 
+% turn the problem into a sequence of easier quadratic problems.”
+%Lagrange multipliers give you an indication of the local optimality conditions 
+% and which constraints are active at the solution.
 
 % fmincon options (SQP algorithm, tight tolerances)
 options = optimoptions('fmincon', ...
@@ -67,6 +72,25 @@ x_results  = zeros(2, n_starts);
 f_results  = zeros(1, n_starts);
 exit_flags = zeros(1, n_starts);
 iters      = zeros(1, n_starts);
+
+
+% If all 20 runs converge to the same [r1, h] (within 0.5 mm tolerance), then only 1 distinct solution 
+% is found. That means the problem likely has a single local optimum, which is then also the global one.
+
+% If some runs land on different points, you'd see multiple distinct solutions — meaning multiple local 
+% optima exist.
+
+% You can check your console output: it prints Distinct solutions found: X. If X = 1, all starting points
+% led to the same answer.
+
+% if you find multiple local optima, the one with the lowest objective value (smallest Vmat) is the global 
+% optimum within your search range.
+% [f_best, idx_best] = min(f_results(converged));
+% It picks the minimum across all converged runs.
+
+% Caveat: you can only say it's the global optimum within your bounds [r1_min, r1_max] x [h_min, h_max]. 
+% You can't guarantee there isn't a better solution outside those bounds. But for your physical problem 
+% the bounds represent real manufacturing limits, so that's fine.
 
 for k = 1:n_starts
     x0k = x_starts(:, k);
@@ -132,11 +156,8 @@ fprintf('\nConstraint values at optimum:\n');
 fprintf('  g1 (stress)    = %+.4e  ', g_opt(1));
 if abs(g_opt(1)) < 1e-4 * params.sigma_allow
     fprintf('[ACTIVE]\n'); else; fprintf('[inactive]\n'); end
-fprintf('  g2 (drainage)  = %+.4e  ', g_opt(2));
-if abs(g_opt(2)) < 1e-6
-    fprintf('[ACTIVE]\n'); else; fprintf('[inactive]\n'); end
-fprintf('  g3 (stability) = %+.4e  ', g_opt(3));
-if abs(g_opt(3)) < 1e-4 * x_best(2)
+fprintf('  g2 (stability) = %+.4e  ', g_opt(2));
+if abs(g_opt(2)) < 1e-4 * x_best(2)
     fprintf('[ACTIVE]\n'); else; fprintf('[inactive]\n'); end
 fprintf('  ceq (volume)   = %+.4e\n', ceq_opt);
 
@@ -144,8 +165,7 @@ fprintf('  ceq (volume)   = %+.4e\n', ceq_opt);
 [x_best2, f_best2, ~, ~, lambda] = fmincon(obj_fun, x_best, [], [], [], [], lb, ub, con_fun, options);
 fprintf('\nLagrange multipliers (lambda):\n');
 fprintf('  mu_g1 (stress)    = %.6e\n', lambda.ineqnonlin(1));
-fprintf('  mu_g2 (drainage)  = %.6e\n', lambda.ineqnonlin(2));
-fprintf('  mu_g3 (stability) = %.6e\n', lambda.ineqnonlin(3));
+fprintf('  mu_g2 (stability) = %.6e\n', lambda.ineqnonlin(2));
 fprintf('  lambda_ceq        = %.6e\n', lambda.eqnonlin(1));
 fprintf('  lambda_lb (r1)    = %.6e\n', lambda.lower(1));
 fprintf('  lambda_lb (h)     = %.6e\n', lambda.lower(2));
@@ -165,17 +185,15 @@ Vmat_g = zeros(Nh, Nr);
 ceq_g  = zeros(Nh, Nr);
 g1_g   = zeros(Nh, Nr);
 g2_g   = zeros(Nh, Nr);
-g3_g   = zeros(Nh, Nr);
 
 for i = 1:Nh
     for j = 1:Nr
-        [Vm, Vp, ~, sm, Ab, ~, ~] = potanalysis( ...
-            R1g(i,j), Hg(i,j), theta_wall, t, rho_mat, rho_soil, K0, g_acc, sigma_allow, cost_mat);
+        [Vm, Vp, ~, sm, ~, ~, ~] = potanalysis( ...
+            R1g(i,j), Hg(i,j), theta_wall, t, rho_mat, rho_soil, K0, g_acc, sigma_allow, cost_mat, f_drain);
         Vmat_g(i,j) = Vm * 1e6;
         ceq_g(i,j)  = Vp - V_required;
         g1_g(i,j)   = sm - sigma_allow;
-        g2_g(i,j)   = A_drain_min - Ab;
-        g3_g(i,j)   = Hg(i,j) - stab_ratio * R1g(i,j);
+        g2_g(i,j)   = Hg(i,j) - stab_ratio * R1g(i,j);
     end
 end
 
@@ -189,11 +207,10 @@ ylabel(colorbar, 'V_{mat} [cm^3]');
 % Constraint boundaries
 contour(r1_vec*1000, h_vec2*1000, ceq_g,  [0 0], 'k-',  'LineWidth', 3.0);
 contour(r1_vec*1000, h_vec2*1000, g1_g,   [0 0], 'r--', 'LineWidth', 1.8);
-contour(r1_vec*1000, h_vec2*1000, g2_g,   [0 0], 'm--', 'LineWidth', 1.8);
-contour(r1_vec*1000, h_vec2*1000, g3_g,   [0 0], 'b--', 'LineWidth', 1.8);
+contour(r1_vec*1000, h_vec2*1000, g2_g,   [0 0], 'b--', 'LineWidth', 1.8);
 
 % Infeasible shading
-infeas = (g1_g>0)|(g2_g>0)|(g3_g>0);
+infeas = (g1_g>0)|(g2_g>0);
 contourf(r1_vec*1000, h_vec2*1000, double(infeas), [0.5 0.5], ...
     'FaceColor',[0.6 0.6 0.6], 'FaceAlpha',0.35, 'EdgeColor','none');
 
@@ -210,11 +227,10 @@ plot(x_best(1)*1000, x_best(2)*1000, 'r*', 'MarkerSize', 16, 'LineWidth', 2.5);
 % Legend
 h_leg(1) = plot(NaN,NaN,'k-', 'LineWidth',3.0, 'DisplayName','Volume constraint (equality)');
 h_leg(2) = plot(NaN,NaN,'r--','LineWidth',1.8, 'DisplayName','g1: stress');
-h_leg(3) = plot(NaN,NaN,'m--','LineWidth',1.8, 'DisplayName','g2: drainage');
-h_leg(4) = plot(NaN,NaN,'b--','LineWidth',1.8, 'DisplayName','g3: stability');
-h_leg(5) = plot(NaN,NaN,'k+', 'MarkerSize',8,  'DisplayName','Starting points');
-h_leg(6) = plot(NaN,NaN,'co', 'MarkerFaceColor','c', 'DisplayName','Converged solutions');
-h_leg(7) = plot(NaN,NaN,'r*', 'MarkerSize',14, 'LineWidth',2.5, ...
+h_leg(3) = plot(NaN,NaN,'b--','LineWidth',1.8, 'DisplayName','g2: stability');
+h_leg(4) = plot(NaN,NaN,'k+', 'MarkerSize',8,  'DisplayName','Starting points');
+h_leg(5) = plot(NaN,NaN,'co', 'MarkerFaceColor','c', 'DisplayName','Converged solutions');
+h_leg(6) = plot(NaN,NaN,'r*', 'MarkerSize',14, 'LineWidth',2.5, ...
     'DisplayName', sprintf('Best: Vmat=%.2f cm^3', f_best*1e6));
 legend(h_leg, 'Location','northeast','FontSize',8);
 

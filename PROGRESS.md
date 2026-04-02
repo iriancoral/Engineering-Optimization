@@ -32,6 +32,14 @@
 > Substituting: sigma = p_horizontal * cos(theta) * r / (t * cos(theta)) = p_horizontal * r / t.
 > The cos(theta) cancels — no correction needed."
 
+**Step size study — why error curves don't follow O(h) exactly:**
+> "The O(h) reference line assumes the function has significant higher-order terms (h^2, h^3, ...) in
+> the Taylor expansion. If the function is nearly linear — like ours — those higher-order terms are tiny,
+> so the truncation error is already very small even at large h. That is why the error curve sits below
+> the O(h) line and does not follow it closely. O(h) represents the worst case for forward FD; our
+> functions are well-behaved, so we get better-than-worst-case accuracy. The reference line is still
+> useful — it shows the maximum expected slope, and the error curves never go steeper than O(h)."
+
 **Wall angle model (alpha -> theta_wall):**
 > "Fixed wall angle theta_wall = 10 deg gives r2 = r1 + h*tan(theta_wall), physically more meaningful
 > than a fixed ratio r2/r1. Consistent with injection moulding practice. theta_wall < phi_soil = 30 deg

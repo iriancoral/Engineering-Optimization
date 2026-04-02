@@ -115,7 +115,7 @@ Vmat_feas = Vmat_line;
 Vmat_feas(~feas_line) = NaN;
 [Vmat_min_est, idx_min] = min(Vmat_feas);
 
-if ~isnan(Vmat_min_est)
+if ~isnan(Vmat_min_est) %"If Vmat_min_est is not NaN" so if it is a number
     r1_opt_est = r1_line(idx_min) * 1000;   % mm
     h_opt_est  = h_line_sol(idx_min) * 1000; % mm
 
@@ -212,7 +212,7 @@ end
 for j = 2:N_line
     if ~isnan(g2_line(j)) && ~isnan(g2_line(j-1))
         if sign(g2_line(j)) ~= sign(g2_line(j-1))
-            xline(r1_line(j)*1000, 'b:', 'LineWidth', 1.5);
+            xline(r1_line(j)*1000, 'b:', 'LineWidth', 1.5, 'DisplayName', 'g_2 = 0 (stability boundary)');
         end
     end
 end
