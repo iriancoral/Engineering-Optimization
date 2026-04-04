@@ -8,7 +8,7 @@
 %   Console  - Optimum details, active constraints, Lagrange multipliers
 % -------------------------------------------------------
 
-clear; clc;
+clear; %clc;
 potparams;
 
 params.theta_wall  = theta_wall;
@@ -37,6 +37,19 @@ ub = [r1_max; h_max];
 % turn the problem into a sequence of easier quadratic problems.”
 %Lagrange multipliers give you an indication of the local optimality conditions 
 % and which constraints are active at the solution.
+
+%SQP (used by `fmincon` with the 'sqp' algorithm) solves a nonlinear 
+% constrained optimization problem by iteratively approximating it with 
+% quadratic programming (QP) subproblems. At each iteration, it builds a 
+% quadratic model of the objective using the Hessian of the Lagrangian and 
+% linearizes the constraints using their Jacobian. The QP is solved to obtain 
+% a step direction (Δx) and updated Lagrange multipliers, after which the 
+% design variables are updated (x ← x + Δx). This process repeats until the 
+% KKT optimality conditions are satisfied, and the final x represents the 
+% optimized design variables.
+
+
+
 
 % fmincon options (SQP algorithm, tight tolerances)
 options = optimoptions('fmincon', ...
@@ -150,6 +163,8 @@ fprintf('  r1   = %.6f mm\n',  x_best(1)*1000);
 fprintf('  h    = %.6f mm\n',  x_best(2)*1000);
 fprintf('  r2   = %.6f mm\n',  (x_best(1) + x_best(2)*tan(theta_wall*pi/180))*1000);
 fprintf('  Vmat = %.6f cm3\n', f_best*1e6);
+conv_idx = find(converged);
+fprintf('  Iters = %d\n', iters(conv_idx(idx_best)));
 
 [g_opt, ceq_opt] = potcon(x_best, params);
 fprintf('\nConstraint values at optimum:\n');
@@ -199,14 +214,13 @@ end
 
 figure(1); clf;
 hold on;
-Vmat_levels = linspace(min(Vmat_g(:)), prctile(Vmat_g(:),80), 20);
+Vmat_levels = linspace(min(Vmat_g(:)), max(Vmat_g(:)), 20);
 contour(r1_vec*1000, h_vec2*1000, Vmat_g, Vmat_levels, 'LineWidth', 0.8);
 colormap(parula); colorbar;
 ylabel(colorbar, 'V_{mat} [cm^3]');
 
 % Constraint boundaries
 contour(r1_vec*1000, h_vec2*1000, ceq_g,  [0 0], 'k-',  'LineWidth', 3.0);
-contour(r1_vec*1000, h_vec2*1000, g1_g,   [0 0], 'r--', 'LineWidth', 1.8);
 contour(r1_vec*1000, h_vec2*1000, g2_g,   [0 0], 'b--', 'LineWidth', 1.8);
 
 % Infeasible shading
@@ -217,20 +231,19 @@ contourf(r1_vec*1000, h_vec2*1000, double(infeas), [0.5 0.5], ...
 % All starting points
 plot(x_starts(1,:)*1000, x_starts(2,:)*1000, 'k+', 'MarkerSize', 8, 'LineWidth', 1.2);
 
-% Converged solutions
-plot(x_results(1,converged)*1000, x_results(2,converged)*1000, ...
-    'co', 'MarkerSize', 7, 'MarkerFaceColor','c');
+% Failed starting points
+plot(x_starts(1,~converged)*1000, x_starts(2,~converged)*1000, ...
+    'rx', 'MarkerSize', 12, 'LineWidth', 2.0);
 
 % Best solution
-plot(x_best(1)*1000, x_best(2)*1000, 'r*', 'MarkerSize', 16, 'LineWidth', 2.5);
+plot(x_best(1)*1000, x_best(2)*1000, 'g*', 'MarkerSize', 16, 'LineWidth', 2.5);
 
 % Legend
 h_leg(1) = plot(NaN,NaN,'k-', 'LineWidth',3.0, 'DisplayName','Volume constraint (equality)');
-h_leg(2) = plot(NaN,NaN,'r--','LineWidth',1.8, 'DisplayName','g1: stress');
-h_leg(3) = plot(NaN,NaN,'b--','LineWidth',1.8, 'DisplayName','g2: stability');
-h_leg(4) = plot(NaN,NaN,'k+', 'MarkerSize',8,  'DisplayName','Starting points');
-h_leg(5) = plot(NaN,NaN,'co', 'MarkerFaceColor','c', 'DisplayName','Converged solutions');
-h_leg(6) = plot(NaN,NaN,'r*', 'MarkerSize',14, 'LineWidth',2.5, ...
+h_leg(2) = plot(NaN,NaN,'b--','LineWidth',1.8, 'DisplayName','g2: stability');
+h_leg(3) = plot(NaN,NaN,'k+', 'MarkerSize',8,  'DisplayName','Starting points');
+h_leg(4) = plot(NaN,NaN,'rx', 'MarkerSize',12, 'LineWidth',2.0, 'DisplayName','Failed to converge');
+h_leg(5) = plot(NaN,NaN,'g*', 'MarkerSize',14, 'LineWidth',2.5, ...
     'DisplayName', sprintf('Best: Vmat=%.2f cm^3', f_best*1e6));
 legend(h_leg, 'Location','northeast','FontSize',8);
 
@@ -239,6 +252,11 @@ ylabel('h  [mm]',  'FontSize',11);
 title(sprintf('fmincon (SQP) - Multiple starts  |  m_{soil} = %g kg', m_soil),'FontSize',12);
 axis([r1_min*1000 r1_max*1000 h_min*1000 h_max*1000]);
 grid on; hold off;
+
+
+
+%KAN GESKIPT WORDEN 
+
 
 % -------------------------------------------------------
 % FIGURE 2: Bar comparison - penalty method vs fmincon

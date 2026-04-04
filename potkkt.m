@@ -12,14 +12,12 @@
 % Requires potfmincon_result.mat (produced by potfmincon.m).
 % -------------------------------------------------------
 
-clear; clc;
+%clc;
 potparams;
 
-% Load fmincon result
-if ~exist('potfmincon_result.mat', 'file')
-    error('Run potfmincon.m first to generate potfmincon_result.mat');
-end
-load('potfmincon_result.mat', 'x_fmincon', 'f_fmincon', 'lambda', 'params');
+% Requires potfmincon.m to be run first (variables in workspace)
+x_fmincon = x_best;
+f_fmincon = f_best;
 
 x_opt = x_fmincon;
 h_fd  = 1e-8;    % FD step size (from sensitivity analysis)
@@ -61,7 +59,6 @@ fprintf('Gradients at x* (forward FD, h = %.0e):\n', h_fd);
 fprintf('  grad f    = [%+.6e,  %+.6e]\n', grad_f(1),      grad_f(2));
 fprintf('  grad g1   = [%+.6e,  %+.6e]\n', grad_g(1,1),    grad_g(2,1));
 fprintf('  grad g2   = [%+.6e,  %+.6e]\n', grad_g(1,2),    grad_g(2,2));
-fprintf('  grad g3   = [%+.6e,  %+.6e]\n', grad_g(1,3),    grad_g(2,3));
 fprintf('  grad ceq  = [%+.6e,  %+.6e]\n', grad_ceq(1),    grad_ceq(2));
 fprintf('\n');
 
@@ -72,8 +69,8 @@ tol_active = 1e-4;
 active_ineq = abs(g_opt) < tol_active;
 
 fprintf('Constraint values at x*:\n');
-cnames = {'g1 (stress)', 'g2 (drainage)', 'g3 (stability)'};
-for i = 1:3
+cnames = {'g1 (stress)', 'g2 (stability)'};
+for i = 1:2
     status = 'inactive';
     if active_ineq(i); status = 'ACTIVE'; end
     fprintf('  %s = %+.4e  [%s]\n', cnames{i}, g_opt(i), status);
@@ -111,11 +108,11 @@ mu_active  = mu_lam(1:end-1);
 lambda_ceq = mu_lam(end);
 
 % Full mu vector (inactive constraints get mu=0)
-mu_full = zeros(3,1);
+mu_full = zeros(2,1);
 mu_full(idx_active) = mu_active;
 
 fprintf('Multipliers computed from stationarity:\n');
-for i = 1:3
+for i = 1:2
     fprintf('  mu_%d (%s) = %+.6e\n', i, cnames{i}, mu_full(i));
 end
 fprintf('  lambda_ceq          = %+.6e\n', lambda_ceq);
@@ -135,7 +132,6 @@ end
 fprintf('fmincon multipliers for comparison:\n');
 fprintf('  mu_1 (fmincon) = %+.6e\n', lambda.ineqnonlin(1));
 fprintf('  mu_2 (fmincon) = %+.6e\n', lambda.ineqnonlin(2));
-fprintf('  mu_3 (fmincon) = %+.6e\n', lambda.ineqnonlin(3));
 fprintf('  lam_ceq        = %+.6e\n\n', lambda.eqnonlin(1));
 
 % -------------------------------------------------------
@@ -151,7 +147,7 @@ fprintf('  ceq(x*) = 0:  %s  (|ceq| = %.2e)\n\n', yn(pf_eq), abs(ceq_opt));
 % KKT CONDITION 3: Dual feasibility
 % -------------------------------------------------------
 fprintf('--- KKT Check 3: Dual Feasibility (mu >= 0) ---\n');
-for i = 1:3
+for i = 1:2
     ok = mu_full(i) >= -1e-8;
     fprintf('  mu_%d = %+.6e  [%s]\n', i, mu_full(i), yn(ok));
 end
@@ -161,9 +157,10 @@ fprintf('  Dual feasibility: %s\n\n', yn(df_ok));
 % -------------------------------------------------------
 % KKT CONDITION 4: Complementary slackness
 % -------------------------------------------------------
+
 fprintf('--- KKT Check 4: Complementary Slackness (mu_i * g_i = 0) ---\n');
-cs_vals = mu_full .* g_opt(:);   % g_opt(:) ensures column vector regardless of potcon output shape
-for i = 1:3
+cs_vals = mu_full .* g_opt(:);
+for i = 1:2
     ok = abs(cs_vals(i)) < 1e-8;
     fprintf('  mu_%d * g_%d = %+.4e  [%s]\n', i, i, cs_vals(i), yn(ok));
 end
@@ -181,6 +178,11 @@ fprintf('  3. Dual feasibility:      %s\n', yn(df_ok));
 fprintf('  4. Complementary slack:   %s\n', yn(cs_ok));
 fprintf('  --> x* is a KKT point:    %s\n\n', yn(all_ok));
 
+
+
+% OVERBODIG HIERONDER
+
+
 % -------------------------------------------------------
 % Verify KKT at a NON-optimal feasible point (for contrast)
 % -------------------------------------------------------
@@ -189,6 +191,7 @@ fprintf('=== KKT Check at a Non-Optimal Feasible Point ===\n');
 % Find a point on the volume curve at a different r1 that satisfies g <= 0
 r1_test = x_opt(1) * 1.4;    % larger r1 -> different h from volume eq.
 th      = params.theta_wall * pi / 180;
+V_req   = params.m_soil / params.rho_soil;
 % Solve cubic for h_test given r1_test and fixed wall angle
 a   = tan(th);
 p3  = pi*a^2/3; p2 = pi*a*r1_test; p1 = pi*r1_test^2; p0 = -V_req;
@@ -205,7 +208,7 @@ fprintf('Test point: r1 = %.2f mm,  h = %.2f mm\n', x_test(1)*1000, x_test(2)*10
 
 [g_test, ceq_test] = potcon(x_test, params);
 fprintf('Constraint values:\n');
-for i = 1:3
+for i = 1:2
     fprintf('  %s = %+.4e\n', cnames{i}, g_test(i));
 end
 fprintf('  ceq = %+.4e\n\n', ceq_test);
@@ -224,7 +227,7 @@ else
     end
     mu_lam_t   = pinv(A_t) * (-gf_t);
     lambda_t   = mu_lam_t(end);
-    mu_t_full  = zeros(3,1);
+    mu_t_full  = zeros(2,1);
     if ~isempty(idx_t)
         mu_t_full(idx_t) = mu_lam_t(1:end-1);
     end
@@ -237,6 +240,10 @@ else
     fprintf('--> This is a KKT point: %s  (expected: NO)\n\n', yn(norm(res_t)<1e-4 && df_t));
 end
 
+
+
+
+
 % -------------------------------------------------------
 % FIGURE: Gradient vectors at optimum on contour map
 % -------------------------------------------------------
@@ -248,50 +255,35 @@ h_vec2 = linspace(h_min,  h_max,  Nh);
 V_required = params.m_soil / params.rho_soil;
 Vmat_g = zeros(Nh, Nr);
 ceq_g  = zeros(Nh, Nr);
+g2_g   = zeros(Nh, Nr);
 
 for i = 1:Nh
     for j = 1:Nr
         [Vm, Vp, ~, ~, ~, ~, ~] = potanalysis( ...
             R1g(i,j), Hg(i,j), params.theta_wall, params.t, params.rho_mat, ...
-            params.rho_soil, params.K0, params.g_acc, params.sigma_allow, params.cost_mat);
+            params.rho_soil, params.K0, params.g_acc, params.sigma_allow, params.cost_mat, params.f_drain);
         Vmat_g(i,j) = Vm * 1e6;
         ceq_g(i,j)  = Vp - V_required;
+        g2_g(i,j)   = Hg(i,j) - params.stab_ratio * R1g(i,j);
     end
 end
 
 figure(1); clf;
 hold on;
-Vmat_levels = linspace(min(Vmat_g(:)), prctile(Vmat_g(:),80), 20);
+Vmat_levels = linspace(min(Vmat_g(:)), max(Vmat_g(:)), 20);
 contour(r1_vec*1000, h_vec2*1000, Vmat_g, Vmat_levels, 'LineWidth', 0.8);
 colormap(parula); colorbar;
 contour(r1_vec*1000, h_vec2*1000, ceq_g, [0 0], 'k-', 'LineWidth', 2.5);
-
-% Scale for arrow display
-sc = 15 / max(norm(grad_f), norm(grad_ceq));
-
-% -grad_f arrow (direction of steepest descent of f)
-quiver(x_opt(1)*1000, x_opt(2)*1000, -grad_f(1)*sc*1000, -grad_f(2)*sc*1000, 0, ...
-    'b', 'LineWidth', 2.5, 'MaxHeadSize', 0.5, 'DisplayName', '-grad f');
-
-% grad_ceq arrow
-quiver(x_opt(1)*1000, x_opt(2)*1000, grad_ceq(1)*sc*1000, grad_ceq(2)*sc*1000, 0, ...
-    'k', 'LineWidth', 2.5, 'MaxHeadSize', 0.5, 'DisplayName', 'grad ceq');
-
-% Active inequality gradient arrows
-colors_ineq = {'r', 'm', 'c'};
-for i = 1:3
-    if active_ineq(i)
-        quiver(x_opt(1)*1000, x_opt(2)*1000, ...
-            grad_g(1,i)*sc*1000, grad_g(2,i)*sc*1000, 0, ...
-            colors_ineq{i}, 'LineWidth', 2.0, 'MaxHeadSize', 0.5, ...
-            'DisplayName', sprintf('grad g%d (active)', i));
-    end
-end
+contour(r1_vec*1000, h_vec2*1000, g2_g,  [0 0], 'b--', 'LineWidth', 1.8);
 
 plot(x_opt(1)*1000, x_opt(2)*1000, 'r*', 'MarkerSize', 14, 'LineWidth', 2, ...
     'DisplayName', 'x* (optimum)');
 
-legend('Location', 'northeast', 'FontSize', 9);
+h1 = plot(NaN,NaN,'k-', 'LineWidth',2.5);
+h2 = plot(NaN,NaN,'b--','LineWidth',1.8);
+h3 = plot(NaN,NaN,'r*', 'MarkerSize',14, 'LineWidth',2);
+legend([h1 h2 h3], {'Volume constraint (equality)','g2: stability','x* (optimum)'}, ...
+    'Location','northeast','FontSize',9);
 xlabel('r_1  [mm]', 'FontSize', 11);
 ylabel('h  [mm]',   'FontSize', 11);
 title('KKT geometry: gradient vectors at x*', 'FontSize', 12);
