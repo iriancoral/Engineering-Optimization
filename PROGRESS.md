@@ -49,7 +49,7 @@
 **Course:** ME46060 Engineering Optimization
 **Project:** Optimal Flower Pot Design
 **Student IDs:** 4894413 & 5170540
-**Last updated:** 2026-03-24
+**Last updated:** 2026-04-04
 **GitHub:** https://github.com/iriancoral/Engineering-Optimization (branch: master)
 - Push: git add . -> git commit -m "msg" -> git push
 - Pull: git pull
@@ -77,7 +77,7 @@ All files in: `Final report/`
 | potsensitivity.m | Step 6: FD step size study, log sensitivities, Hessian/convexity check | Done |
 | potpenalty.m | Step 7: self-implemented exterior penalty method (course requirement) | Done |
 | potfmincon.m | Step 8: fmincon SQP, multiple starts, saves potfmincon_result.mat | Done |
-| potkkt.m | Step 9: KKT verification + gradient geometry plot | Done |
+| potkkt.m | Step 9: KKT verification + contour plot (no gradient arrows — too small to see) | Done |
 
 ### Run Order
 ```
@@ -97,6 +97,24 @@ potcontour  ->  potsensitivity  ->  potpenalty  ->  potfmincon  ->  potkkt
 | potfmincon_full.m | fmincon on 3-4 variable problem |
 | potparametric.m | Soil mass sweep: 1, 5, 10, 25 kg |
 | potcommercial.m | Compare optimum with real commercial pots |
+
+---
+
+## Recent Changes (2026-04-04)
+
+- potkkt.m: Removed `clc` (was clearing terminal output when figures loaded in -nodesktop mode)
+- potkkt.m: Removed gradient arrow code (arrows invisible due to tiny gradient values vs axis scale)
+- potkkt.m: Added g2 stability constraint line + legend to contour plot
+- potkkt.m: Changed contour levels from prctile(80) to full max range
+- potfmincon.m: Removed g1 stress contour + legend entry (not visible in plot range)
+
+## KKT Results Summary
+
+- No active inequality constraints (both g1, g2 inactive) → optimum determined by volume equality only
+- KKT reduces to Lagrange conditions (mu1=mu2=0, lambda=-0.0497)
+- Stationarity residual ≈ 1.5e-11 (satisfied)
+- All 4 KKT conditions satisfied
+- Insight: stress constraint has large margin → wall thickness `t` could be a design variable in the extended model
 
 ---
 
