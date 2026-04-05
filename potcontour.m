@@ -9,7 +9,7 @@
 % Run potparams first, or run this script directly (it calls potparams internally).
 % -------------------------------------------------------
 
-clear; clc;
+clear; 
 potparams;   % load all fixed parameters into workspace
 
 % Required internal volume
@@ -128,7 +128,11 @@ if ~isnan(Vmat_min_est) %"If Vmat_min_est is not NaN" so if it is a number
     fprintf('  g2 (stability) = %.4e  (<=0 ok)\n', g2_line(idx_min));
     fprintf('\n');
 end
-
+%OKay so you calculate all the r and h for the Vrequired for all the r 
+% and h you calculate Vmat and take the Vmat that is the lowest (since 
+% that is what you want to optimize) and for the lowest Vmat if it is in 
+% the feasible domain it means it satisfies the constraints and you found 
+% your optimum values 
 % -------------------------------------------------------
 % FIGURE 1: Full contour map
 % -------------------------------------------------------
@@ -137,7 +141,7 @@ hold on;
 
 % --- Objective contours (background) ---
 % Choose contour levels to be informative around expected optimum
-Vmat_levels = linspace(min(Vmat_cm3(:)), prctile(Vmat_cm3(:), 80), 18);
+Vmat_levels = linspace(min(Vmat_cm3(:)), max(Vmat_cm3(:)), 18);
 [C_obj, h_obj] = contour(r1_mm, h_mm, Vmat_cm3, Vmat_levels, ...
     'LineWidth', 1.0, 'EdgeColor', 'flat');
 colormap(parula);
@@ -172,7 +176,7 @@ end
 
 % --- Manual legend entries ---
 h_leg(1) = plot(NaN, NaN, 'k-',  'LineWidth', 3.0, 'DisplayName', 'h_1: volume = V_{req} (equality)');
-h_leg(2) = plot(NaN, NaN, 'r--', 'LineWidth', 2.0, 'DisplayName', 'g_1: wall stress limit');
+h_leg(2) = plot(NaN, NaN, 'r--', 'LineWidth', 2.0, 'DisplayName', 'g_1: wall stress limit (inactive, off-plot)');
 h_leg(3) = plot(NaN, NaN, 'b--', 'LineWidth', 2.0, 'DisplayName', 'g_2: stability limit');
 h_leg(4) = plot(NaN, NaN, 'r*',  'MarkerSize', 14, 'LineWidth', 2.0, 'DisplayName', ...
     sprintf('Graphical optimum (%.1f, %.1f) mm', r1_opt_est, h_opt_est));

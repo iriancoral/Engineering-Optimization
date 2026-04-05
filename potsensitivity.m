@@ -10,7 +10,7 @@
 % Run potparams first (called internally here).
 % -------------------------------------------------------
 
-clear; clc;
+clear; 
 potparams;
 
 % Pack fixed parameters into struct for clean function calls
@@ -120,7 +120,8 @@ loglog(h_vec, err_g1_r1, 'm-^', 'LineWidth', 1.5, 'DisplayName', 'dg1/dr1 (stres
 % Reference lines for O(h) and O(h^2)
 loglog(h_vec, h_vec/h_vec(4),      'k:',  'DisplayName', 'O(h) reference');  %okayyyy so the error function is what remains after so the error and that has to be the same as the error for FD or CD being O(h) or O(h^2)
 loglog(h_vec, h_vec.^2/h_vec(4)^2,'k--', 'DisplayName', 'O(h^2) reference');
-xline(1e-8, 'g--', 'LineWidth', 1.0);
+xline(1e-8, 'g--', 'LineWidth', 1.0, 'HandleVisibility', 'off');
+plot(NaN, NaN, 'g--', 'LineWidth', 1.0, 'DisplayName', 'h^\star = 10^{-8}');
 text(1.2e-8, 1e-1, 'h = 1e-8', 'FontSize', 8, 'Color', [0 0.6 0]);
 xlabel('Step size  h', 'FontSize', 11);
 ylabel('Relative gradient error  |FD - ref| / |ref|', 'FontSize', 11);

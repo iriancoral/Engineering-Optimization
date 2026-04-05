@@ -15,7 +15,7 @@
 %   Figure 3 - Optimization path overlaid on contour map
 % -------------------------------------------------------
 
-clear; clc;
+clear; 
 potparams;
 
 params.theta_wall  = theta_wall;
@@ -188,7 +188,7 @@ end
 
 figure(3); clf;
 hold on;
-Vmat_levels = linspace(min(Vmat_grid(:)), prctile(Vmat_grid(:),80), 20);
+Vmat_levels = linspace(min(Vmat_grid(:)), max(Vmat_grid(:)), 20);
 contour(r1_vec*1000, h_vec2*1000, Vmat_grid, Vmat_levels, 'LineWidth', 0.8);
 colormap(parula); colorbar;
 contour(r1_vec*1000, h_vec2*1000, ceq_grid, [0 0], 'k-', 'LineWidth', 2.5);
@@ -208,7 +208,7 @@ for k = 1:n_iter
 end
 
 % Mark final optimum
-plot(x_pen(1)*1000, x_pen(2)*1000, 'rp', 'MarkerSize', 14, 'MarkerFaceColor', 'r', ...
+plot(x_pen(1)*1000, x_pen(2)*1000, 'p', 'MarkerSize', 14, 'Color', [0 0.8 0.8], 'MarkerFaceColor', [0 0.8 0.8], ...
     'DisplayName', sprintf('Penalty optimum (%.2f cm^3)', f_pen*1e6));
 
 legend('Location', 'northeast', 'FontSize', 9);
