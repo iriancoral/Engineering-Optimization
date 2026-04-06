@@ -248,6 +248,8 @@ ylabel('r_2^* [mm]'); xlabel('m_{soil} [kg]');
 title('Top radius'); grid on;
 
 sgtitle('Optimal dimensions vs soil mass (log-log)', 'FontSize', 12);
+set(gcf, 'Position', [100 100 1200 400]);
+saveas(gcf, 'Pictures/potparametric fig(1).png');
 
 % =======================================================
 % FIGURE 2: Material volume and mass vs soil mass
@@ -270,6 +272,8 @@ ylabel('Pot mass [g]'); xlabel('m_{soil} [kg]');
 title('Pot mass'); legend('Location','northwest','FontSize',8); grid on;
 
 sgtitle('Material volume and pot mass vs soil mass', 'FontSize', 12);
+set(gcf, 'Position', [100 100 1000 400]);
+saveas(gcf, 'Pictures/potparametric fig(2).png');
 
 % =======================================================
 % FIGURE 3: Wall angle and thickness vs soil mass
@@ -290,6 +294,8 @@ ylabel('t^* [mm]'); xlabel('m_{soil} [kg]');
 title('Optimal wall thickness'); legend('Location','best','FontSize',8); grid on;
 
 sgtitle('Wall angle and thickness vs soil mass', 'FontSize', 12);
+set(gcf, 'Position', [100 100 1000 400]);
+saveas(gcf, 'Pictures/potparametric fig(3).png');
 
 % =======================================================
 % FIGURE 4: Material savings (3-var and 4-var vs 2-var)
@@ -308,6 +314,8 @@ ylabel('Material savings vs 2-var [%]');
 legend('3-var (free r_2)', '4-var (free r_2 + t)', 'Location', 'best', 'FontSize', 9);
 title('Material savings from extended models', 'FontSize', 12);
 grid on;
+set(gcf, 'Position', [100 100 600 400]);
+saveas(gcf, 'Pictures/potparametric fig(4).png');
 
 % =======================================================
 % SAVE

@@ -312,6 +312,8 @@ title('Pot mass at optimum');
 grid on;
 
 sgtitle(sprintf('Model comparison  |  m_{soil} = %g kg', m_soil), 'FontSize', 12);
+set(gcf, 'Position', [100 100 1000 400]);
+saveas(gcf, 'Pictures/potfmincon_full fig(1).png');
 
 % --- Figure 2: Design variable comparison ---
 figure(2); clf;
@@ -351,6 +353,8 @@ set(gca, 'XTickLabel', model_names, 'FontSize', 8);
 ylabel('t^* [mm]'); title('Wall thickness'); grid on;
 
 sgtitle(sprintf('Optimal design variables  |  m_{soil} = %g kg', m_soil), 'FontSize', 12);
+set(gcf, 'Position', [100 100 900 600]);
+saveas(gcf, 'Pictures/potfmincon_full fig(2).png');
 
 % --- Figure 3: Wall angle comparison ---
 figure(3); clf;
@@ -359,6 +363,8 @@ set(gca, 'XTickLabel', model_names, 'FontSize', 9);
 ylabel('\theta_{wall}^* [deg]');
 title(sprintf('Optimal wall angle  |  m_{soil} = %g kg', m_soil), 'FontSize', 12);
 grid on;
+set(gcf, 'Position', [100 100 600 400]);
+saveas(gcf, 'Pictures/potfmincon_full fig(3).png');
 
 % Save results
 x_3var = x_best3; f_3var = f_best3;
