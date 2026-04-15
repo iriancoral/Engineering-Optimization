@@ -15,9 +15,10 @@
 %clc;
 potparams;
 
-% Requires potfmincon.m to be run first (variables in workspace)
-x_fmincon = x_best;
-f_fmincon = f_best;
+% Load results from potfmincon.m (or use workspace if already run)
+if ~exist('x_fmincon','var')
+    load('potfmincon_result.mat','x_fmincon','f_fmincon','lambda','params');
+end
 
 x_opt = x_fmincon;
 h_fd  = 1e-8;    % FD step size (from sensitivity analysis)
